@@ -14,7 +14,7 @@
  *
  */
 
-#define VERSION "0.30-090304"
+#define VERSION "0.31"
 
 #include <stdio.h>
 #include <stdlib.h>
