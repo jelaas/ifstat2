@@ -1,0 +1,47 @@
+
+
+
+Examples
+
+Start daemon:
+=============
+ifstat -d 20 -t 20
+
+Client:
+=======
+
+ifstat 
+             RX --------------------------   TX -------------------------
+lo            973.0 k bit/s      126   pps    973.0 k bit/s      126   pps 
+eth0          643.8 k bit/s      147   pps    571.2 k bit/s      106   pps 
+sunet6        103.3 k bit/s       10   pps      3.9 k bit/s        5   pps 
+
+
+ifstat2 eth*
+             RX --------------------------   TX -------------------------
+eth0          704.9 M bit/s       59 k pps      3.2 M bit/s        5 k pps 
+eth1             16   bit/s        0   pps    215.8 k bit/s      431   pps 
+eth2          220.8 k bit/s      441   pps        0   bit/s        0   pps 
+eth3              0   bit/s        0   pps    219.5 k bit/s      438   pps
+
+
+
+
+Option below gives all netstat counters in absolute numbers plus rate for
+for same counters. 
+
+ifstat2 -e eth0
+
+
+#ovrf=0 EWMA=3 client-pid=3982 -- pid=3653 sampling_interval=20 time_const=20
+Interface        RX Pkts/Rate    TX Pkts/Rate    RX Data/Rate    TX Data/Rate  
+                 RX Errs/Rate    RX Drop/Rate    RX Over/Rate    RX Leng/Rate  
+                  RX Crc/Rate     RX Frm/Rate    RX Fifo/Rate    RX Miss/Rate  
+                 TX Errs/Rate    TX Drop/Rate    TX Coll/Rate    TX Carr/Rate  
+                 TX Abrt/Rate    TX Fifo/Rate    TX Hear/Rate    TX Wind/Rate  
+eth0              18759K 25       26161K 5         2029M 2K        2041M 1K     
+                       0 0             0 0             0 0             0 0      
+                       0 0             0 0             0 0             0 0      
+                       0 0             0 0             0 0             0 0      
+                       0 0             0 0             0 0             0 0      
+
