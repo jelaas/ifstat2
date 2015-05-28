@@ -44,6 +44,7 @@ struct {
 	int min_interval;
 	int time_constant;
 	int show_errors;
+	int noformat;
 	int verbose;
 } conf;
 
@@ -279,7 +280,10 @@ void format_rate(FILE *fp, struct ifstat_ent *n, int i)
 
 void print_head(FILE *fp)
 {
-
+	if(conf.noformat) {
+		return;
+	}
+	
 	if(conf.verbose) fprintf(fp, "#%s\n", info_source);
 	if(!conf.show_errors) {
 		fprintf(fp, "%42s", "RX --------------------------");	
@@ -324,14 +328,19 @@ void nformat_rate(FILE *fp, double x)
 	char temp[64];
 	uint64_t i = x;
 	
+	if(conf.noformat) {
+		fprintf(fp, "%llu pps ", i);
+		return;
+	}
+
 	if (i > 1500*1000)
 		sprintf(temp, "%5.3f M",
 			((double)(i/1000))/1000);
-        else if (i > 5*1000)
+	else if (i > 5*1000)
 		sprintf(temp, "%7llu k", i/(1000));
-        else
+	else
 		sprintf(temp, "%7llu  ", i);
-
+	
 	fprintf(fp, "%10s %s", temp, "pps ");
 }
 
@@ -339,6 +348,10 @@ void nformat_bits(FILE *fp, double d)
 {
 	char temp[64];
 
+	if(conf.noformat) {
+		fprintf(fp, "%.0f bits/s ", d*8);
+		return;
+	}
 
 	/*
 	  IEC standard 1998
@@ -346,7 +359,6 @@ void nformat_bits(FILE *fp, double d)
 	  Mbit = 10^6 bits
 	  Gbit = 10^9 bits
 	*/
-
 
         if (d >= 125*1000*1000) 
 		sprintf(temp, "%3.1f G", d/((1000/8)*1000*1000));
@@ -367,7 +379,10 @@ void print_one_if(FILE *fp, struct ifstat_ent *n)
 
 	if(!conf.show_errors) {
 
-		fprintf(fp, "%-10s ", n->name);
+		if(conf.noformat)
+			fprintf(fp, "%s ", n->name);
+		else
+			fprintf(fp, "%-10s ", n->name);
 		nformat_bits(fp, n->rate[2]);
 		nformat_rate(fp, n->rate[0]);
 		nformat_bits(fp, n->rate[3]);
@@ -652,6 +667,7 @@ static void usage(void)
         fprintf(stderr, "  -e extended statistics\n");
         fprintf(stderr, "  -v print version\n");
         fprintf(stderr, "  -i verbose info\n");
+        fprintf(stderr, "  -n disable formatting of output\n");
         fprintf(stderr, "  -h this help\n");
 
         fprintf(stderr, " daemon options;\n");
@@ -771,9 +787,12 @@ int main(int argc, char *argv[])
 
 	conf.min_interval = 20;
 	
-	while ((ch = getopt(argc, argv, "h?vVid:t:er")) != EOF) {
+	while ((ch = getopt(argc, argv, "h?vVid:t:ern")) != EOF) {
 		switch(ch) {
 
+		case 'n':
+			conf.noformat = 1;
+			break;
 		case 'e':
 			conf.show_errors = 1;
 			break;
