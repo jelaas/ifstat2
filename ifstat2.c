@@ -14,7 +14,7 @@
  *
  */
 
-#define VERSION "0.31"
+#define VERSION "0.32"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,12 +28,14 @@
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <math.h>
+#include <sys/types.h>
 
+#include "stats64.h"
 #include "libnetlink.h"
 #include <linux/netdevice.h>
 
@@ -58,14 +60,14 @@ char info_source[128];
 #define DEFAULT_TIME_CONST 5
 
 
-#define MAXS (sizeof(struct net_device_stats)/sizeof(unsigned long))
+#define MAXS (sizeof(struct ifstats64)/sizeof(uint64_t))
 
 struct ifstat_ent
 {
 	struct ifstat_ent	*next;
 	char			*name;
 	int			ifindex;
-	unsigned long long	val[MAXS];
+	uint64_t                val[MAXS];
 	double			rate[MAXS];
 };
 
@@ -95,7 +97,7 @@ int get_netstat_nlmsg(struct sockaddr_nl *who, struct nlmsghdr *m, void *arg)
 	struct rtattr * tb[IFLA_MAX+1];
 	int len = m->nlmsg_len;
 	struct ifstat_ent *n;
-	unsigned long ival[MAXS];
+	uint64_t ival[MAXS];
 	int i;
 
 	if (m->nlmsg_type != RTM_NEWLINK)
@@ -110,7 +112,7 @@ int get_netstat_nlmsg(struct sockaddr_nl *who, struct nlmsghdr *m, void *arg)
 
 	memset(tb, 0, sizeof(tb));
 	parse_rtattr(tb, IFLA_MAX, IFLA_RTA(ifi), len);
-	if (tb[IFLA_IFNAME] == NULL || tb[IFLA_STATS] == NULL)
+	if (tb[IFLA_IFNAME] == NULL || tb[IFLA_STATS64] == NULL)
 		return 0;
 
 	n = malloc(sizeof(*n));
@@ -118,7 +120,7 @@ int get_netstat_nlmsg(struct sockaddr_nl *who, struct nlmsghdr *m, void *arg)
 		abort();
 	n->ifindex = ifi->ifi_index;
 	n->name = strdup(RTA_DATA(tb[IFLA_IFNAME]));
-	memcpy(&ival, RTA_DATA(tb[IFLA_STATS]), sizeof(ival));
+	memcpy(&ival, RTA_DATA(tb[IFLA_STATS64]), sizeof(ival));
 	for (i=0; i<MAXS; i++) {
 
 #undef DO_L2_STATS
@@ -320,18 +322,15 @@ void print_head(FILE *fp)
 void nformat_rate(FILE *fp, double x)
 {
 	char temp[64];
-	unsigned long i = x;
-
-        if (i > 10*1000*1000)
-		sprintf(temp, "%7lu M", i/(1000*1000));
-	else if (i > 1500*1000)
-	  sprintf(temp, "%5.3f M",
-		  ((double)(i/1000))/1000
-		  );
+	uint64_t i = x;
+	
+	if (i > 1500*1000)
+		sprintf(temp, "%5.3f M",
+			((double)(i/1000))/1000);
         else if (i > 5*1000)
-		sprintf(temp, "%7lu k", i/(1000));
+		sprintf(temp, "%7llu k", i/(1000));
         else
-		sprintf(temp, "%7lu  ", i);
+		sprintf(temp, "%7llu  ", i);
 
 	fprintf(fp, "%10s %s", temp, "pps ");
 }
@@ -349,11 +348,12 @@ void nformat_bits(FILE *fp, double d)
 	*/
 
 
-        if (d > 128*1000) 
-		sprintf(temp, "%3.1f M", d/(128*1000));
-
-        else if (d > 128) 
-		sprintf(temp, "%3.1f k", d/128);
+        if (d >= 125*1000*1000) 
+		sprintf(temp, "%3.1f G", d/(125*1000*1000));
+        else if (d >= 125*1000) 
+		sprintf(temp, "%3.1f M", d/(125*1000));
+        else if (d >= 128) 
+		sprintf(temp, "%3.1f k", d/125);
         else 
 		sprintf(temp, "%4.0f  ", d*8);
 
@@ -461,7 +461,7 @@ void update_db(int interval)
 				int i;
 
 				for (i = 0; i < MAXS; i++) { 
-					unsigned long long diff;
+					uint64_t diff;
 					double sample;
 
 					/* Handle one overflow correctly */

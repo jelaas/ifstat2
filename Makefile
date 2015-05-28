@@ -2,7 +2,7 @@
 # Robert Olsson 040130
 #
 CFLAGS=  -g -Os -D_GNU_SOURCE
-CC=$(DIET) gcc
+CC=$(DIET) musl-gcc-x86_32
 
 CFLAGS += -Wall -static
 
