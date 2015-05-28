@@ -349,11 +349,11 @@ void nformat_bits(FILE *fp, double d)
 
 
         if (d >= 125*1000*1000) 
-		sprintf(temp, "%3.1f G", d/(125*1000*1000));
+		sprintf(temp, "%3.1f G", d/((1000/8)*1000*1000));
         else if (d >= 125*1000) 
-		sprintf(temp, "%3.1f M", d/(125*1000));
+		sprintf(temp, "%3.1f M", d/((1000/8)*1000));
         else if (d >= 128) 
-		sprintf(temp, "%3.1f k", d/125);
+		sprintf(temp, "%3.1f k", d/(1000/8));
         else 
 		sprintf(temp, "%4.0f  ", d*8);
 
@@ -671,7 +671,7 @@ int connect_server()
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
 	sun.sun_path[0] = 0;
-	sprintf(sun.sun_path+1, "ifstat%d", getuid());
+	sprintf(sun.sun_path+1, "ifstat%dv" VERSION, getuid());
 
 	if((fd = socket(AF_UNIX, SOCK_STREAM, 0))==-1)
 		return -1;
@@ -703,7 +703,7 @@ int server()
 	memset(&sun, 0, sizeof(sun));
 	sun.sun_family = AF_UNIX;
 	sun.sun_path[0] = 0;
-	sprintf(sun.sun_path+1, "ifstat%d", getuid());
+	sprintf(sun.sun_path+1, "ifstat%dv" VERSION, getuid());
 
 	if (conf.scan_interval == 0) 
 		conf.scan_interval = DEFAULT_INTERVAL; 
