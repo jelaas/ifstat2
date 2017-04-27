@@ -14,7 +14,7 @@
  *
  */
 
-#define VERSION "0.32"
+#define VERSION "0.33"
 
 #include <stdio.h>
 #include <stdlib.h>
